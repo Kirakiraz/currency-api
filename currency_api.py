@@ -45,7 +45,7 @@ df['rate'] = pd.to_numeric(df['rate'], errors='coerce')
 df.dropna(subset=['date', 'target_currency'], inplace=True)
 
 engine = create_engine(
-    'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}')
+    f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}')
 df.to_sql('staging_exchange_rate', engine, if_exists='replace', index=False,
           dtype={
               'date': types.Date(),
