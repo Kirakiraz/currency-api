@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS public.exchange_rate
+CREATE TABLE IF NOT EXISTS exchange_rate
 (
     date date NOT NULL,
     base_currency character varying(3) COLLATE pg_catalog."default",
