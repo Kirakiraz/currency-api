@@ -2,10 +2,16 @@ import os
 import sys
 import requests
 import pandas as pd
+import logging
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text, types
 
 load_dotenv()
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
@@ -13,17 +19,17 @@ DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 DB_NAME = os.getenv("DB_NAME")
 
-print("1. Retrieving data from Frankfurter API...")
+logger.info("Retrieving data from Frankfurter API...")
 url = "https://api.frankfurter.app/latest?from=USD&to=THB,JPY,EUR"
 try:
     response = requests.get(url, timeout=10)
     response.raise_for_status()
     data = response.json()
 except requests.exceptions.RequestException as e:
-    print(f"API Error: Failed to retrieve dataset Reason: {e}")
+    logger.error(f"API Error: Failed to retrieve dataset Reason: {e}")
     sys.exit(1)
 
-print("\n2. Transforming data...")
+logger.info("Transforming data...")
 record_date = data['date']
 base_curr = data['base']
 rates_dict = data['rates']
@@ -48,9 +54,9 @@ df['rate'] = pd.to_numeric(df['rate'], errors='coerce')
 
 df.dropna(subset=['date', 'target_currency'], inplace=True)
 
-print("---Data to be loaded into database---\n", df)
+logger.info(f"---Data to be loaded into database---\n{df}")
 
-print("\n3. Uploading data to staging table...")
+logger.info("Uploading data to staging table...")
 engine = None
 try:
     engine = create_engine(
@@ -65,8 +71,8 @@ try:
                       'rate': types.Float()
                   })
 
-    # Commit upsert
-        print("\n4. Uploading data to prod. table...")
+        # Commit upsert to prod table
+        logger.info("Uploading data to prod. table...")
         upsert_query = """
             INSERT INTO exchange_rate (date, base_currency, target_currency, rate)
             SELECT date, base_currency, target_currency, rate
@@ -79,9 +85,9 @@ try:
         """
         conn.execute(text(upsert_query))
         conn.commit()
-        print("---Completed, UPSERT SUCCESS!!---")
+        logger.info("---Completed, UPSERT SUCCESS!!---")
 except Exception as e:
-    print(f"Database error: {e}")
+    logger.error(f"Database error: {e}")
 finally:
     if engine:
         engine.dispose()
