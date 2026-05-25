@@ -51,6 +51,7 @@ df.dropna(subset=['date', 'target_currency'], inplace=True)
 print("---Data to be loaded into database---\n", df)
 
 print("\n3. Uploading data to staging table...")
+engine = None
 try:
     engine = create_engine(
         f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}')
@@ -82,4 +83,5 @@ try:
 except Exception as e:
     print(f"Database error: {e}")
 finally:
-    engine.dispose()
+    if engine:
+        engine.dispose()
